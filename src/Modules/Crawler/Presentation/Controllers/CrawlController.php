@@ -38,20 +38,18 @@ class CrawlController extends Controller
      */
     public function __invoke(Request $request): JsonResponse
     {
-
-        $url = $request->query('url');
-        if (empty($url)) {
-            return $this->errorResponse('URL is required', 422);
-        }
-
         try {
+            $validatedData = $request->validate([
+                'url' => 'required|url',
+            ]);
+            $url = $validatedData['url'];
             $result = $this->crawlService->crawl($url);
 
             return $this->successResponse($result->toArray());
         } catch (ValidationException $e) {
-            return $this->errorResponse('Failed to crawl the URL', 422);
+            return $this->errorResponse('A validation excepion. ERR: ' . $e->getMessage(), 422);
         } catch (\Throwable $e) {
-            return $this->errorResponse('An unexpected error occurred. ERR: '.$e->getMessage(), 500);
+            return $this->errorResponse('An unexpected error occurred. ERR: '. $e->getMessage(), 500);
         }
 
     }
