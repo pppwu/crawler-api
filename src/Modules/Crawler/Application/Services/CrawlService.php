@@ -1,52 +1,124 @@
-<?php
+<?php 
 
 namespace Modules\Crawler\Application\Services;
 
+use Modules\Crawler\Domain\Contracts\CrawlServiceInterface;
 use Modules\Crawler\Domain\Contracts\HttpClientInterface;
-use Modules\Crawler\Domain\DTO\PageMetaDTO;
+use Modules\Crawler\Domain\Contracts\CrawlRepositoryInterface;
+use Modules\Crawler\Domain\Contracts\UuidGeneratorInterface;
+use Modules\Crawler\Domain\DTO\CrawlResponseDTO;
+use Modules\Crawler\Domain\Models\CrawledPage;
 
-/**
- * Class CrawlService
- *
- * @package Modules\Crawler\Application\Services
- */
-
-class CrawlService
+class CrawlService implements CrawlServiceInterface
 {
-    private HttpClientInterface $httpClient;
-
-    /**
-     * CrawlService constructor.
-     *
-     * @param HttpClientInterface $httpClient
-     */
     public function __construct(
-        HttpClientInterface $httpClient
-    )
-    {
-        $this->httpClient = $httpClient;
-    }
+        private HttpClientInterface $httpClient,
+        private CrawlRepositoryInterface $crawlRepository,
+        private UuidGeneratorInterface $uuidGenerator,
+    ) {}
 
-    /**
-     * Crawl the given URL and extract the page meta information.
-     *
-     * @param string $url
-     * @return PageMetaDTO
-     */
-    public function crawl(string $url): PageMetaDTO
+    public function crawlAndSave(string $url): CrawlResponseDTO
     {
+        $id = $this->uuidGenerator->generate();
+        
         $html = $this->httpClient->get($url);
 
-        $title = null;
-        $description = null;
+        $title = $this->extractMetaTags($html, 'title');
+        $description = $this->extractMetaTags($html, 'description');
+        $screenshotPath = $this->captureScreenshot($url, $id);
 
-        if (preg_match('/<meta name="title" content="(.*?)"/', $html, $matches)) {
-            $title = $matches[1];
-        }
-        if (preg_match('/<meta name="description" content="(.*?)"/', $html, $matches)) {
-            $description = $matches[1];
+        $page = new CrawledPage(
+            id: $id,
+            url: $url,
+            site_meta_title: $title,
+            site_meta_description: $description,
+            screenshot_path: $screenshotPath,
+            created_at: new \DateTime(),
+            updated_at: new \DateTime(),
+        );
+
+        $this->crawlRepository->save($page);
+
+        return new CrawlResponseDTO(
+            id: $page->id,
+            url: $page->url,
+            title: $page->site_meta_title,
+            description: $page->site_meta_description,
+            sreenshotPath: $page->screenshot_path
+        );
+    }
+
+    public function getById(string $id): CrawlResponseDTO
+    {
+        $page = $this->crawlRepository->findById($id);
+
+        return new CrawlResponseDTO(
+            id: $page->id,
+            url: $page->url,
+            title: $page->site_meta_title,
+            description: $page->site_meta_description,
+            sreenshotPath: $page->screenshot_path
+        );
+    }
+
+    public function updateMeta(string $id): CrawlResponseDTO
+    {
+        $existingPage = $this->crawlRepository->findById($id);
+
+        if (! $existingPage) {
+            throw new \RuntimeException("Page with ID {$id} not found");
         }
 
-        return new PageMetaDTO($title,$description);
+        $html = $this->httpClient->get($existingPage->url);
+
+        $newTitle = $this->extractMetaTags($html, 'title');
+        $newDescription = $this->extractMetaTags($html, 'description');
+        $newScreenshotPath = $this->captureScreenshot($existingPage->url, $existingPage->id);
+
+        $newPage = new CrawledPage(
+            id: $existingPage->id,
+            url: $existingPage->url,
+            site_meta_title: $newTitle,
+            site_meta_description: $newDescription,
+            screenshot_path: $newScreenshotPath,
+            created_at: $existingPage->created_at,
+            updated_at: new \DateTime(),
+        );
+
+        $this->crawlRepository->save($newPage);
+
+        return new CrawlResponseDTO(
+            id: $newPage->id,
+            url: $newPage->url,
+            title: $newPage->site_meta_title,
+            description: $newPage->site_meta_description,
+            sreenshotPath: $newPage->screenshot_path
+        );
+    }
+
+    public function deleteById(string $id): bool
+    {
+        return $this->crawlRepository->deleteById($id);
+    }
+
+    private function extractMetaTags(string $html, string $name): ?string
+    {
+        $pattern = '/<meta\s+name\s*=\s*"'.preg_quote($name, '/').'"[^>]*content\s*=\s*"([^"]*)"/i';
+        if (preg_match_all($pattern, $html, $matches)) {
+            return $matches[1][0] ?? null;
+        }
+
+        return null;
+    }
+
+    private function captureScreenshot(string $url, string $id): ?string
+    {
+        // $filename = 'screenshots/' . $id . '.png';
+        // $path = storage_path('app/public/' . $filename);
+
+        // file_put_contents($path, 'MOCK_SCREENSHOT_BINARY');
+
+        //return 'storage/' . $filename;
+        return 'storage/app/public/test.png';
     }
 }
