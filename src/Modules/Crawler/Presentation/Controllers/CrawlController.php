@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
 use Modules\Crawler\Application\Services\CrawlService;
 
 /**
@@ -15,35 +16,19 @@ use Modules\Crawler\Application\Services\CrawlService;
  */
 class CrawlController extends Controller
 {
-    /**
-     * @var CrawlService
-     */
-    private CrawlService $crawlService;
+    public function __construct(
+        private CrawlService $crawlService
+    ) {}
 
-    /**
-     * CrawlController constructor.
-     *
-     * @param CrawlService $crawlService
-     */
-    public function __construct(CrawlService $crawlService)
-    {
-        $this->crawlService = $crawlService;
-    }
-
-    /**
-     * Handle the incoming request.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function __invoke(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse
     {
         try {
-            $validatedData = $request->validate([
+            $url = $request->input('url');
+            $validator = Validator::make(['url' => $url], [
                 'url' => 'required|url',
             ]);
-            $url = $validatedData['url'];
-            $result = $this->crawlService->crawl($url);
+            $validatedData = $validator->validated();
+            $result = $this->crawlService->crawlAndSave($validatedData['url']);
 
             return $this->successResponse($result->toArray());
         } catch (ValidationException $e) {
@@ -51,7 +36,57 @@ class CrawlController extends Controller
         } catch (\Throwable $e) {
             return $this->errorResponse('An unexpected error occurred. ERR: '. $e->getMessage(), 500);
         }
+    }
 
+    public function show(string $id): JsonResponse
+    {
+        try {
+            $validator = Validator::make(['id' => $id], [
+                'id' => 'required|uuid',
+            ]);
+            $validatedData = $validator->validated();
+            $result = $this->crawlService->getById($validatedData['id']);
+
+            return $this->successResponse($result->toArray());
+        } catch (ValidationException $e) {
+            return $this->errorResponse('A validation excepion. ERR: ' . $e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->errorResponse('An unexpected error occurred. ERR: '. $e->getMessage(), 500);
+        }
+    }
+
+    public function update(string $id): JsonResponse
+    {
+        try {
+            $validator = Validator::make(['id' => $id], [
+                'id' => 'required|uuid',
+            ]);
+            $validatedData = $validator->validated();
+            $result = $this->crawlService->updateMeta($validatedData['id']);
+
+            return $this->successResponse($result->toArray());
+        } catch (ValidationException $e) {
+            return $this->errorResponse('A validation excepion. ERR: ' . $e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->errorResponse('An unexpected error occurred. ERR: '. $e->getMessage(), 500);
+        }
+    }
+
+    public function destroy(String $id): JsonResponse
+    {   
+        try {
+            $validator = Validator::make(['id' => $id], [
+                'id' => 'required|uuid',
+            ]);
+            $validatedData = $validator->validated();
+            $result = $this->crawlService->deleteById($validatedData['id']);
+
+            return $this->successResponse(['deleted' => $result]);
+        } catch (ValidationException $e) {
+            return $this->errorResponse('A validation excepion. ERR: ' . $e->getMessage(), 422);
+        } catch (\Throwable $e) {
+            return $this->errorResponse('An unexpected error occurred. ERR: '. $e->getMessage(), 500);
+        }
     }
 
     /**
