@@ -12,6 +12,8 @@ use Modules\Crawler\Domain\Contracts\CrawlRepositoryInterface;
 use Modules\Crawler\Domain\Contracts\CrawlServiceInterface;
 use Modules\Crawler\Infrastructure\Repositories\CrawlRepository;
 use Modules\Crawler\Application\Services\CrawlService;
+use Modules\Crawler\Infrastructure\Utils\PageScreenshot;
+use Modules\Crawler\Domain\Contracts\PageScreenshotInterface;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,7 +25,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(HttpClientInterface::class, LaravelHttpClient::class);
         $this->app->bind(UuidGeneratorInterface::class, UuidGenerator::class);
         $this->app->bind(CrawlRepositoryInterface::class, CrawlRepository::class);
-        $this->app->bind(CrawlServiceInterface::class, CrawlService::class);    }
+        $this->app->bind(CrawlServiceInterface::class, CrawlService::class);
+        $this->app->bind(PageScreenshotInterface::class, PageScreenshot::class);
+    }
 
     /**
      * Bootstrap any application services.

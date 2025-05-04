@@ -16,5 +16,5 @@ interface PageScreenshotInterface
      * @param string $url The URL of the page to capture.
      * @return string The path to the saved screenshot.
      */
-    public function capture(string $url): string;
+    public function capture(string $url, string $id): string;
 }

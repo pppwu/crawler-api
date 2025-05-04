@@ -8,6 +8,7 @@ use Modules\Crawler\Domain\Contracts\CrawlRepositoryInterface;
 use Modules\Crawler\Domain\Contracts\UuidGeneratorInterface;
 use Modules\Crawler\Domain\DTO\CrawlResponseDTO;
 use Modules\Crawler\Domain\Models\CrawledPage;
+use Modules\Crawler\Domain\Contracts\PageScreenshotInterface;
 
 class CrawlService implements CrawlServiceInterface
 {
@@ -15,6 +16,7 @@ class CrawlService implements CrawlServiceInterface
         private HttpClientInterface $httpClient,
         private CrawlRepositoryInterface $crawlRepository,
         private UuidGeneratorInterface $uuidGenerator,
+        private PageScreenshotInterface $pageScreenshot
     ) {}
 
     public function crawlAndSave(string $url): CrawlResponseDTO
@@ -42,9 +44,11 @@ class CrawlService implements CrawlServiceInterface
         return new CrawlResponseDTO(
             id: $page->id,
             url: $page->url,
-            title: $page->site_meta_title,
-            description: $page->site_meta_description,
-            sreenshotPath: $page->screenshot_path
+            siteMetaTitle: $page->site_meta_title,
+            siteMetaDescription: $page->site_meta_description,
+            sreenshotPath: $page->screenshot_path,
+            createdAt: $page->created_at->format('Y-m-d H:i:s'),
+            updatedAt: $page->updated_at->format('Y-m-d H:i:s')
         );
     }
 
@@ -55,9 +59,11 @@ class CrawlService implements CrawlServiceInterface
         return new CrawlResponseDTO(
             id: $page->id,
             url: $page->url,
-            title: $page->site_meta_title,
-            description: $page->site_meta_description,
-            sreenshotPath: $page->screenshot_path
+            siteMetaTitle: $page->site_meta_title,
+            siteMetaDescription: $page->site_meta_description,
+            sreenshotPath: $page->screenshot_path,
+            createdAt: $page->created_at->format('Y-m-d H:i:s'),
+            updatedAt: $page->updated_at->format('Y-m-d H:i:s')
         );
     }
 
@@ -90,9 +96,11 @@ class CrawlService implements CrawlServiceInterface
         return new CrawlResponseDTO(
             id: $newPage->id,
             url: $newPage->url,
-            title: $newPage->site_meta_title,
-            description: $newPage->site_meta_description,
-            sreenshotPath: $newPage->screenshot_path
+            siteMetaTitle: $newPage->site_meta_title,
+            siteMetaDescription: $newPage->site_meta_description,
+            sreenshotPath: $newPage->screenshot_path,
+            createdAt: $newPage->created_at->format('Y-m-d H:i:s'),
+            updatedAt: $newPage->updated_at->format('Y-m-d H:i:s')
         );
     }
 
@@ -113,12 +121,6 @@ class CrawlService implements CrawlServiceInterface
 
     private function captureScreenshot(string $url, string $id): ?string
     {
-        // $filename = 'screenshots/' . $id . '.png';
-        // $path = storage_path('app/public/' . $filename);
-
-        // file_put_contents($path, 'MOCK_SCREENSHOT_BINARY');
-
-        //return 'storage/' . $filename;
-        return 'storage/app/public/test.png';
+        return $this->pageScreenshot->capture($url, $id);
     }
 }
