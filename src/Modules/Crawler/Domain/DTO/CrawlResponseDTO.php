@@ -14,9 +14,11 @@ class CrawlResponseDTO
     public function __construct(
         public readonly string $id,
         public readonly string $url,
-        public readonly ?string $title,
-        public readonly ?string $description,
+        public readonly ?string $siteMetaTitle,
+        public readonly ?string $siteMetaDescription,
         public readonly ?string $sreenshotPath,
+        public readonly ?string $createdAt = null,
+        public readonly ?string $updatedAt = null,
     ) {}
 
     /**
