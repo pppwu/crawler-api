@@ -2,27 +2,30 @@
 
 namespace Modules\Crawler\Domain\DTO;
 
-class PageMetaDTO
+class CrawlResponseDTO
 {
     /**
+     * @param string $id
+     * @param string $url
      * @param string|null $title
      * @param string|null $description
+     * @param string|null $sreenshotPath
      */
     public function __construct(
+        public readonly string $id,
+        public readonly string $url,
         public readonly ?string $title,
         public readonly ?string $description,
+        public readonly ?string $sreenshotPath,
     ) {}
 
     /**
-     * Convert the DTO to an array.
+     * Convert the object to an array.
      *
      * @return array
      */
     public function toArray(): array
     {
-        return [
-            'site_meta_title' => $this->title ?? null,
-            'site_meta_description' => $this->description ?? null,
-        ];
+        return get_object_vars($this);
     }
 }
