@@ -39,16 +39,16 @@ class CrawlService implements CrawlServiceInterface
             updated_at: new \DateTime(),
         );
 
-        $this->crawlRepository->save($page);
+        $response = $this->crawlRepository->save($page);
 
         return new CrawlResponseDTO(
-            id: $page->id,
-            url: $page->url,
-            siteMetaTitle: $page->site_meta_title,
-            siteMetaDescription: $page->site_meta_description,
-            sreenshotPath: $page->screenshot_path,
-            createdAt: $page->created_at->format('Y-m-d H:i:s'),
-            updatedAt: $page->updated_at->format('Y-m-d H:i:s')
+            id: $response->id,
+            url: $response->url,
+            siteMetaTitle: $response->site_meta_title,
+            siteMetaDescription: $response->site_meta_description,
+            sreenshotPath: $response->screenshot_path,
+            createdAt: $response->created_at->format('Y-m-d H:i:s'),
+            updatedAt: $response->updated_at->format('Y-m-d H:i:s')
         );
     }
 
